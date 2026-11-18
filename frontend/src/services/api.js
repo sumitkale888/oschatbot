@@ -12,13 +12,14 @@ api.interceptors.response.use(
   response => response,
   error => {
     const detail = error.response?.data?.detail
+    const unreachable = !error.response || (!detail && [500, 502, 503, 504].includes(error.response.status))
     const message = Array.isArray(detail)
       ? detail.map(item => item.msg).join(', ')
       : typeof detail === 'string'
         ? detail
-        : error.response
-          ? error.message
-          : 'Unable to reach the backend. Make sure it is running on port 8001.'
+        : unreachable
+          ? 'Unable to reach the backend. Make sure it is running on port 8001.'
+          : error.message
     return Promise.reject(new Error(message))
   },
 )

@@ -12,7 +12,7 @@ export default function ToastContainer({ toasts, dismiss }) {
           {toast.type === 'error'
             ? <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-terracotta" />
             : <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-sage" />}
-          <p className="flex-1 text-sm font-medium leading-5 text-charcoal">{toast.message}</p>
+          <p title={toast.message} className="line-clamp-4 min-w-0 flex-1 break-words text-sm font-medium leading-5 text-charcoal">{toast.message}</p>
           <button onClick={() => dismiss(toast.id)} className="text-charcoal/40 hover:text-charcoal" aria-label="Dismiss">
             <X className="h-4 w-4" />
           </button>

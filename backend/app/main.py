@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
+import logging
 import os
+from threading import Thread
 from dotenv import dotenv_values
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,8 +16,15 @@ from .services.rag_service import rag_service
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    rag_service.index_all()
+    Thread(target=_index_in_background, daemon=True).start()
     yield
+
+
+def _index_in_background() -> None:
+    try:
+        rag_service.index_all()
+    except Exception as exc:
+        logging.getLogger(__name__).error("Startup indexing failed: %s", exc)
 
 
 app = FastAPI(
@@ -27,6 +36,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

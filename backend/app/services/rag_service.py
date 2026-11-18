@@ -149,7 +149,18 @@ class RAGService:
         vectorstore = self.get_vectorstore()
         return vectorstore.similarity_search(question, k=settings.retrieval_k)
 
-    def answer(self, question: str) -> tuple[str, list[dict]]:
+    @staticmethod
+    def _history_text(history) -> str:
+        if not history:
+            return ""
+        lines = [
+            f"{'Student' if role == 'user' else 'Tutor'}: {content[:1500]}"
+            for role, content in history
+        ]
+        return "PREVIOUS CONVERSATION:\n" + "\n".join(lines) + "\n\n"
+
+    def answer(self, question: str, history=None) -> tuple[str, list[dict]]:
+        history_text = self._history_text(history)
         try:
             documents = self.retrieve(question)
         except Exception as exc:
@@ -162,7 +173,7 @@ class RAGService:
                 "Answer the user's question from your general Operating Systems knowledge. "
                 "Explain in simple language, use short numbered steps when useful, "
                 "and clearly say: 'This answer was not found in the uploaded documents.'\n\n"
-                f"QUESTION:\n{question}"
+                f"{history_text}QUESTION:\n{question}"
             )
             response = self._model().invoke(prompt)
             answer = self._response_text(response)
@@ -178,7 +189,7 @@ class RAGService:
             "Explain in simple language, use short numbered steps for procedures, "
             "and mention source document and page where each idea comes from. "
             "If the context does not answer the question, say that clearly.\n\n"
-            f"CONTEXT:\n{context}\n\nQUESTION:\n{question}"
+            f"CONTEXT:\n{context}\n\n{history_text}QUESTION:\n{question}"
         )
         response = self._model().invoke(prompt)
         answer = self._response_text(response)
@@ -245,6 +256,7 @@ class RAGService:
             else:
                 match = next((item for item in options if item.lower() == answer.lower()), None)
                 answer = match or answer
+        options = options[:4]
         if answer not in options:
             return None
 
@@ -254,7 +266,7 @@ class RAGService:
             return None
         return {
             "question": question,
-            "options": options[:4],
+            "options": options,
             "answer": answer,
             "explanation": explanation,
         }
@@ -276,12 +288,7 @@ class RAGService:
         if context:
             prompt += f"\nPrefer this study context when possible:\n{context}"
 
-        try:
-            response = self._model().invoke(prompt)
-        except Exception as exc:
-            logger.warning("Quiz model call failed: %s", exc)
-            return []
-
+        response = self._model().invoke(prompt)
         questions = [
             item
             for item in (self._normalize_quiz_item(raw) for raw in self._parse_quiz_payload(self._response_text(response)))

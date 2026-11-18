@@ -1,4 +1,3 @@
-import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -23,16 +22,18 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
     if request.conversation_id and not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    conversation = create_or_get_conversation(db, request.conversation_id, request.question)
-    add_message(db, conversation, "user", request.question)
+    question = request.question.strip()
+    history = [(m.role, m.content) for m in conversation.messages[-6:]] if conversation else []
 
     try:
-        answer, sources_data = rag_service.answer(request.question)
+        answer, sources_data = rag_service.answer(question, history)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Knowledge retrieval or Gemini API failed: {exc}") from exc
 
+    conversation = create_or_get_conversation(db, request.conversation_id, question)
+    add_message(db, conversation, "user", question)
     add_message(db, conversation, "assistant", answer, sources_data)
     sources = [SourceItem(**source) for source in sources_data]
     return ChatResponse(conversation_id=conversation.id, answer=answer, sources=sources)

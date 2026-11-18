@@ -15,7 +15,7 @@ export default function Quiz({ toast }) {
     setSubmitted(false)
     setAnswers({})
     try {
-      const result = await quizApi.generate(topic, count)
+      const result = await quizApi.generate(topic.trim(), count)
       const nextQuestions = (result.questions || []).map(item => ({
         ...item,
         options: (item.options || []).map(option => (
@@ -24,7 +24,8 @@ export default function Quiz({ toast }) {
       })).filter(item => item.question && item.options.length >= 2)
       setQuestions(nextQuestions)
       if (!nextQuestions.length) throw new Error('The quiz API returned no usable questions')
-      toast(`Quiz ready — ${nextQuestions.length} questions`)
+      if (result.warning) toast(`${result.warning}. Showing sample questions instead.`, 'error')
+      else toast(`Quiz ready — ${nextQuestions.length} questions`)
     } catch (error) {
       toast(error.message, 'error')
     } finally {

@@ -118,13 +118,24 @@ FALLBACK_QUIZ = [
 ]
 
 
+def _topic_rank(item: dict, topic: str) -> int:
+    words = {word for word in topic.lower().split() if len(word) > 3}
+    text = f"{item['question']} {item['explanation']}".lower()
+    return -sum(1 for word in words if word.rstrip("s") in text)
+
+
 @router.post("/generate", response_model=QuizResponse)
 def generate_quiz(request: QuizRequest):
+    topic = request.topic.strip()
     items = []
+    warning = None
     try:
-        items = rag_service.generate_quiz(request.topic, request.count) or []
+        items = rag_service.generate_quiz(topic, request.count) or []
+        if not items:
+            warning = "Gemini returned no usable quiz questions"
     except Exception as exc:
         logger.warning("Quiz generation failed, using fallback questions: %s", exc)
+        warning = f"Gemini quiz generation failed: {exc}"
 
     questions = []
     for item in items:
@@ -135,16 +146,20 @@ def generate_quiz(request: QuizRequest):
         if len(questions) >= request.count:
             break
 
+    used_fallback = False
     if len(questions) < request.count:
-        for item in FALLBACK_QUIZ:
-            try:
-                candidate = QuizQuestion(**item)
-            except Exception:
-                continue
+        for item in sorted(FALLBACK_QUIZ, key=lambda entry: _topic_rank(entry, topic)):
+            candidate = QuizQuestion(**item)
             if any(existing.question == candidate.question for existing in questions):
                 continue
             questions.append(candidate)
+            used_fallback = True
             if len(questions) >= request.count:
                 break
 
-    return QuizResponse(topic=request.topic, questions=questions[: request.count])
+    return QuizResponse(
+        topic=topic,
+        questions=questions[: request.count],
+        fallback=used_fallback,
+        warning=warning if used_fallback else None,
+    )

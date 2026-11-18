@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(min_length=3, max_length=2000)
+    question: str = Field(min_length=1, max_length=2000)
     conversation_id: Optional[int] = None
 
 
@@ -47,10 +47,6 @@ class QuizRequest(BaseModel):
     count: int = Field(default=5, ge=1, le=10)
 
 
-class QuizOption(BaseModel):
-    text: str
-
-
 class QuizQuestion(BaseModel):
     question: str
     options: list[str]
@@ -61,3 +57,5 @@ class QuizQuestion(BaseModel):
 class QuizResponse(BaseModel):
     topic: str
     questions: list[QuizQuestion]
+    fallback: bool = False
+    warning: Optional[str] = None

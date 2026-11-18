@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001').replace(/\/$/, '')
+export const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'http://127.0.0.1:8001')).replace(/\/$/, '')
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,11 +12,14 @@ api.interceptors.response.use(
   response => response,
   error => {
     const detail = error.response?.data?.detail
+    const unreachable = !error.response || (!detail && [500, 502, 503, 504].includes(error.response.status))
     const message = Array.isArray(detail)
       ? detail.map(item => item.msg).join(', ')
       : typeof detail === 'string'
         ? detail
-        : error.message || 'Unable to reach the server'
+        : unreachable
+          ? 'Unable to reach the backend. Make sure it is running on port 8001.'
+          : error.message
     return Promise.reject(new Error(message))
   },
 )

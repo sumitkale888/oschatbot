@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #262724;
+  background: #f7f3ea;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+
+[class*="text-charcoal/35"],
+[class*="text-charcoal/40"],
+[class*="text-charcoal/45"] {
+  color: rgba(38, 39, 36, 0.72) !important;
+}
+
+[class*="text-charcoal/55"],
+[class*="text-charcoal/60"],
+[class*="text-charcoal/65"] {
+  color: rgba(38, 39, 36, 0.82) !important;
+}
+
+input, textarea, select {
+  color: #262724;
+}
+
+.font-serif {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.animate-toast-in {
+  animation: toast-in .28s ease-out both;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.markdown p { margin: .55em 0; }
+.markdown h1, .markdown h2, .markdown h3 { margin-top: 1em; margin-bottom: .45em; color: #262724; font-family: Georgia, "Times New Roman", serif; }
+.markdown ul, .markdown ol { margin: .6em 0; padding-left: 1.35em; }
+.markdown li { margin: .28em 0; }
+.markdown strong { color: #262724; }
+.markdown code { border-radius: 6px; background: rgba(38,39,36,.07); padding: .12em .35em; font-size: .88em; }
+.markdown pre { overflow-x: auto; border: 1px solid rgba(38,39,36,.08); border-radius: 14px; background: #262724; padding: 1em; color: #f7f3ea; }
+.markdown pre code { background: transparent; padding: 0; color: inherit; }
+.markdown table { width: 100%; border-collapse: collapse; font-size: .875em; }
+.markdown th, .markdown td { border: 1px solid rgba(38,39,36,.10); padding: .5em; }
